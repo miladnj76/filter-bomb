@@ -10,7 +10,7 @@ body{font-family:Arial,sans-serif;background:#101522;color:#f4f6fb;margin:0;padd
 main{max-width:950px;margin:auto}
 h2{color:#ffd166}
 .panel{background:#1b2435;border:1px solid #303d53;border-radius:12px;padding:14px;margin:12px 0}
-button{padding:13px 17px;border:0;border-radius:9px;background:#ffd166;color:#171717;font-weight:bold;margin:4px}
+button{padding:13px 17px;border:0;border-radius:9px;background:#ffd166;color:#171717;font-weight:bold;margin:4px;cursor:pointer}
 button:disabled{opacity:.5}
 .secondary{background:#35445d;color:white}
 .small{font-size:13px;color:#bdc8da;line-height:1.9}
@@ -23,19 +23,20 @@ th{color:#ffd166}
 </head>
 <body>
 <main>
-<h2>💣 فیلتر بمب — تمام LBank Spot</h2>
+<h2>💣 فیلتر بمب — LBank Spot</h2>
 
 <div class="panel small">
-بازار: همه جفت‌های USDT قابل‌دریافت از LBank Spot<br>
-مارکت‌کپ: بدون محدودیت<br>
-تغییر ۲۴ ساعته: از ‎-۲۰٪ تا ‎+۲۰٪<br>
-تایم‌فریم: یک‌ساعته (1H)<br>
-امتیاز نهایی: حداقل ۷٫۵ از ۱۰<br>
-حداکثر خروجی: ۵ ارز برتر
+• بررسی جفت‌ارزهای USDT بازار Spot در LBank<br>
+• بدون محدودیت مارکت‌کپ<br>
+• بدون شرط تغییر ۲۴ ساعته<br>
+• تحلیل نمودار یک‌ساعته (1H)<br>
+• حداقل امتیاز: ۷٫۵ از ۱۰<br>
+• حداکثر خروجی: ۵ ارز برتر<br>
+• امتیاز نشان‌دهنده تطابق با الگو است، نه تضمین پامپ.
 </div>
 
 <button id="start" onclick="startScan()">شروع اسکن کامل</button>
-<button class="secondary" onclick="stopScan()">توقف</button>
+<button class="secondary" onclick="stopScan()">توقف اسکن</button>
 
 <div class="panel">
 <b>گزارش اسکن</b>
@@ -49,9 +50,8 @@ th{color:#ffd166}
 
 <script>
 const $=id=>document.getElementById(id);
-let stopped=false;
-
 const API="https://api.lbkex.com/v2";
+let stopped=false;
 
 function sleep(ms){
   return new Promise(resolve=>setTimeout(resolve,ms));
@@ -70,7 +70,7 @@ async function getJSON(url){
   const r=await fetch(url,{cache:"no-store"});
   if(!r.ok) throw new Error("HTTP "+r.status);
   const j=await r.json();
-  if(j.result===false || j.result==="false"){
+  if(j.result===false||j.result==="false"){
     throw new Error(j.msg||("خطای API: "+j.error_code));
   }
   return j;
@@ -98,19 +98,18 @@ async function getTickers(){
   if(!rows) throw new Error("قالب پاسخ تیکر قابل شناسایی نیست.");
 
   const map=new Map();
+
   for(const row of rows){
     const pair=String(row.symbol||"").toLowerCase();
     if(!pair.endsWith("_usdt")) continue;
 
     const t=row.ticker||row;
-    const change=Number(t.change);
     const price=Number(t.latest??t.price);
     const volume=Number(t.vol??t.volume);
     const turnover=Number(t.turnover);
 
     map.set(pair,{
       pair,
-      change,
       price,
       volume:Number.isFinite(volume)?volume:0,
       turnover:Number.isFinite(turnover)?turnover:0
@@ -125,7 +124,7 @@ async function getCandles(pair){
 
   const j=await getJSON(url);
   const rows=getRows(j);
-  if(!rows||rows.length<25) throw new Error("کندل کافی نیست");
+  if(!rows||rows.length<25) throw new Error("کندل کافی دریافت نشد");
 
   const out=rows.map(x=>{
     if(!Array.isArray(x)) return null;
@@ -148,7 +147,7 @@ async function getCandles(pair){
 
 function analyze(rows){
   const closes=rows.map(x=>x.close);
-  const last=closes.at(-1);
+  const last=closes[closes.length-1];
   const recent=rows.slice(-6);
   const previous=rows.slice(-24,-6);
 
@@ -159,9 +158,10 @@ function analyze(rows){
 
   const move6=(last/closes[closes.length-7]-1)*100;
   const move24=(last/closes[closes.length-24]-1)*100;
-  const last24=rows.slice(-24);
-  const high=Math.max(...last24.map(x=>x.high));
-  const low=Math.min(...last24.map(x=>x.low));
+
+  const window=rows.slice(-24);
+  const high=Math.max(...window.map(x=>x.high));
+  const low=Math.min(...window.map(x=>x.low));
   const range=(high-low)/last*100;
 
   const lows=rows.slice(-6).map(x=>x.low);
@@ -175,7 +175,7 @@ function analyze(rows){
 
   if(volumeRatio>=2){
     score+=2;
-    evidence.push("حجم ۶ ساعت اخیر ≥۲ برابر میانگین ۱۸ ساعت قبل");
+    evidence.push("حجم ۶ ساعت اخیر حداقل ۲ برابر میانگین ۱۸ ساعت قبل");
   }else if(volumeRatio>=1.4){
     score+=1;
     evidence.push("افزایش نسبی حجم");
@@ -185,15 +185,15 @@ function analyze(rows){
 
   if(Math.abs(move6)<=3){
     score+=2;
-    evidence.push("حرکت ۶ ساعته محدود");
+    evidence.push("حرکت قیمت در ۶ ساعت اخیر محدود");
   }else if(Math.abs(move6)<=5){
     score+=1;
-    evidence.push("حرکت نسبتاً محدود در ۶ ساعت");
+    evidence.push("حرکت ۶ ساعته نسبتاً محدود");
   }
 
   if(range<=8){
     score+=2;
-    evidence.push("دامنه ۲۴ کندل فشرده");
+    evidence.push("دامنه ۲۴ کندل اخیر فشرده");
   }else if(range<=13){
     score+=1;
     evidence.push("فشردگی نسبی دامنه");
@@ -201,7 +201,7 @@ function analyze(rows){
 
   if(higher>=4){
     score+=2;
-    evidence.push("کف‌های بالاتر");
+    evidence.push("کف‌های بالاتر در کندل‌های اخیر");
   }else if(higher>=2){
     score+=1;
     evidence.push("چند کف بالاتر");
@@ -214,13 +214,13 @@ function analyze(rows){
 
   if(move24>=-3&&move24<=5){
     score+=1;
-    evidence.push("حرکت ۲۴ کندل هنوز محدود");
+    evidence.push("حرکت قیمت در ۲۴ کندل نسبتاً محدود");
   }
 
   const risks=[];
-  if(volumeRatio<1.4) risks.push("حجم غیرعادی تأیید نشده");
+  if(volumeRatio<1.4) risks.push("جهش حجم تأیید نشده");
   if(Math.abs(move6)>5) risks.push("حرکت اخیر قیمت زیاد است");
-  if(range>13) risks.push("دامنه نوسان وسیع");
+  if(range>13) risks.push("دامنه نوسان وسیع است");
   if(!risks.length) risks.push("شکست الگو و نوسان شدید ممکن است");
 
   return {
@@ -239,40 +239,33 @@ async function startScan(){
   $("start").disabled=true;
   $("results").textContent="در حال آماده‌سازی…";
 
-  let pairs=[],tickers;
-  let pairCount=0,eligible=0,checked=0,errors=0,missing=0;
-  let errorExamples=[];
+  let pairs,tickers;
+  let pairCount=0,withTicker=0,checked=0,errors=0,missing=0;
   const candidates=[];
+  const errorExamples=[];
 
   try{
-    $("status").textContent="مرحله ۱: دریافت تمام جفت‌های Spot USDT…";
+    $("status").textContent="مرحله ۱: دریافت جفت‌ارزهای Spot…";
     pairs=await getPairs();
     pairCount=pairs.length;
 
-    $("status").textContent+="\nمرحله ۲: دریافت تیکرهای بازار…";
+    $("status").textContent+="\nمرحله ۲: دریافت اطلاعات بازار…";
     tickers=await getTickers();
 
     const scanPairs=pairs.filter(p=>tickers.has(p));
+    withTicker=scanPairs.length;
 
     $("status").textContent=
       "جفت‌های USDT در فهرست بازار: "+pairCount+
-      "\nجفت‌های دارای تیکر: "+scanPairs.length+
-      "\nدر حال بررسی تغییر روزانه و نمودار 1H…";
+      "\nجفت‌های دارای تیکر: "+withTicker+
+      "\nبدون فیلتر تغییر ۲۴ ساعته؛ در حال بررسی نمودارهای 1H…";
 
-    const eligiblePairs=[];
-
-    for(const pair of scanPairs){
-      const t=tickers.get(pair);
-      if(!Number.isFinite(t.change)) continue;
-      if(t.change < -20 || t.change > 20) continue;
-      eligible++;
-      eligiblePairs.push({pair,t});
-    }
-
-    for(let i=0;i<eligiblePairs.length;i++){
+    for(let i=0;i<scanPairs.length;i++){
       if(stopped) break;
 
-      const {pair,t}=eligiblePairs[i];
+      const pair=scanPairs[i];
+      const t=tickers.get(pair);
+
       try{
         const candles=await getCandles(pair);
         checked++;
@@ -283,16 +276,17 @@ async function startScan(){
         }
       }catch(e){
         errors++;
-        if(errorExamples.length<5) errorExamples.push(pair+": "+e.message);
+        if(errorExamples.length<5){
+          errorExamples.push(pair+": "+e.message);
+        }
       }
 
       $("status").textContent=
-        "جفت‌های USDT در فهرست بازار: "+pairCount+
-        "\nدارای تیکر: "+scanPairs.length+
-        "\nتغییر ۲۴ ساعته در محدوده: "+eligible+
+        "جفت‌های Spot USDT در فهرست: "+pairCount+
+        "\nجفت‌های دارای تیکر: "+withTicker+
         "\nکندل‌های 1H بررسی‌شده: "+checked+
         "\nخطای نمودار: "+errors+
-        "\nپیشرفت: "+(i+1)+" از "+eligiblePairs.length+
+        "\nپیشرفت: "+(i+1)+" از "+scanPairs.length+
         (stopped?"\nتوقف درخواست شده.":"\nدر حال اسکن…");
 
       await sleep(160);
@@ -304,21 +298,22 @@ async function startScan(){
     if(!top.length){
       $("results").textContent=
         "نامزدی با امتیاز حداقل ۷٫۵ پیدا نشد."+
-        (errors?"\nتوجه: خطای نمودار وجود دارد؛ ممکن است اسکن ناقص باشد.":"");
+        (errors?"\nبه‌دلیل خطاهای نمودار، نتیجه ممکن است ناقص باشد.":"");
     }else{
       let html="<table><thead><tr>"+
-        "<th>جفت‌ارز</th><th>قیمت</th><th>تغییر ۲۴س</th>"+
-        "<th>حجم ۲۴س</th><th>امتیاز</th><th>شواهد 1H</th><th>ریسک</th>"+
+        "<th>جفت‌ارز</th><th>قیمت</th><th>حجم ۲۴س</th>"+
+        "<th>امتیاز</th><th>شواهد 1H</th><th>ریسک اصلی</th>"+
         "</tr></thead><tbody>";
 
       for(const x of top){
-        html+="<tr><td><b>"+x.pair.toUpperCase()+"</b></td>"+
+        html+="<tr>"+
+          "<td><b>"+x.pair.toUpperCase()+"</b></td>"+
           "<td>"+(Number.isFinite(x.price)?fmt(x.price,8):"نامشخص")+"</td>"+
-          "<td>"+x.change.toFixed(2)+"%</td>"+
           "<td>"+fmt(x.turnover||x.volume)+"</td>"+
           "<td><b>"+x.score.toFixed(1)+"/10</b></td>"+
           "<td>"+x.evidence.join("؛ ")+"</td>"+
-          "<td>"+x.risk+"</td></tr>";
+          "<td>"+x.risk+"</td>"+
+          "</tr>";
       }
 
       html+="</tbody></table>";
@@ -327,20 +322,19 @@ async function startScan(){
 
     $("status").textContent=
       "اسکن "+(stopped?"متوقف شد":"پایان یافت")+
-      "\nجفت‌های Spot USDT در فهرست بازار: "+pairCount+
-      "\nجفت‌های دارای تیکر: "+tickers.size+
-      "\nواجد شرایط تغییر ۲۴ ساعته: "+eligible+
-      "\nکندل 1H بررسی‌شده: "+checked+
-      "\nخطای کندل: "+errors+
-      "\nنامزدهای دارای امتیاز ≥۷٫۵: "+candidates.length+
+      "\nجفت‌های Spot USDT: "+pairCount+
+      "\nجفت‌های دارای تیکر: "+withTicker+
+      "\nکندل‌های 1H بررسی‌شده: "+checked+
+      "\nخطاهای نمودار: "+errors+
+      "\nنامزدهای امتیاز حداقل ۷٫۵: "+candidates.length+
       "\nنتایج نمایش‌داده‌شده: "+top.length+
-      (errorExamples.length?"\n\nنمونه خطاها:\n- "+errorExamples.join("\n- "):"")+
-      "\n\nمارکت‌کپ هیچ محدودیتی ندارد.";
+      "\nشرط تغییر ۲۴ ساعته حذف شده است."+
+      (errorExamples.length?"\n\nنمونه خطاها:\n- "+errorExamples.join("\n- "):"");
 
   }catch(e){
     $("status").textContent=
       "خطای اسکن: "+e.message+
-      "\nاطلاعات بازار دریافت نشد؛ نتیجه قابل اتکا نیست.";
+      "\nداده معتبر بازار دریافت نشد؛ نتیجه قابل اتکا نیست.";
     $("results").textContent="اسکن کامل نشد.";
   }finally{
     $("start").disabled=false;
