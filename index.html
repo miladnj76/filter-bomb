@@ -4,229 +4,170 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>فیلتر بمب MEME - LBank</title>
+<title>فیلتر بمب LBank Spot</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;padding:15px;background:#101522;color:#f3f5fa;font-family:Arial,sans-serif}
-main{max-width:900px;margin:auto}
+body{font-family:Arial,sans-serif;background:#101522;color:#f4f6fb;margin:0;padding:15px}
+main{max-width:950px;margin:auto}
 h2{color:#ffd166}
 .panel{background:#1b2435;border:1px solid #303d53;border-radius:12px;padding:14px;margin:12px 0}
-p{line-height:1.9}
-.small{font-size:13px;color:#c1cada;line-height:1.9}
-textarea{width:100%;min-height:110px;background:#101522;color:white;border:1px solid #485570;border-radius:9px;padding:12px;font-size:15px;direction:ltr}
-button{border:0;border-radius:9px;padding:13px 17px;margin:4px 0;background:#ffd166;color:#171717;font-weight:bold;font-size:15px}
-button.secondary{background:#35445d;color:white}
+button{padding:13px 17px;border:0;border-radius:9px;background:#ffd166;color:#171717;font-weight:bold;margin:4px}
 button:disabled{opacity:.5}
+.secondary{background:#35445d;color:white}
+.small{font-size:13px;color:#bdc8da;line-height:1.9}
 #status{white-space:pre-wrap;line-height:1.9;overflow-wrap:anywhere}
 #results{overflow-x:auto}
-table{border-collapse:collapse;width:100%;min-width:650px;font-size:13px}
-th,td{padding:10px;border-bottom:1px solid #3c4960;text-align:right;vertical-align:top;line-height:1.8}
+table{width:100%;min-width:700px;border-collapse:collapse;font-size:13px}
+td,th{text-align:right;vertical-align:top;padding:9px;border-bottom:1px solid #3b465b;line-height:1.8}
 th{color:#ffd166}
-.good{color:#7ee2a8}
-.bad{color:#ff9aa9}
 </style>
 </head>
 <body>
 <main>
-<h2>💣 فیلتر بمب | LBank MEME Spot</h2>
+<h2>💣 فیلتر بمب — تمام LBank Spot</h2>
 
 <div class="panel small">
-<b>شرایط ثابت فیلتر</b><br>
-• فقط ارزهای دسته MEME در LBank Spot<br>
-• بدون محدودیت مارکت‌کپ<br>
-• تغییر ۲۴ ساعته: از ‎-۲۰٪ تا ‎+۲۰٪، شامل دو مرز<br>
-• تحلیل کندل‌های یک‌ساعته (1H)<br>
-• حداقل امتیاز: ۷٫۵ از ۱۰<br>
-• حداکثر ۵ نامزد برتر<br>
-• امتیاز فقط میزان تطابق با الگوست، نه پیش‌بینی قطعی پامپ.
+بازار: همه جفت‌های USDT قابل‌دریافت از LBank Spot<br>
+مارکت‌کپ: بدون محدودیت<br>
+تغییر ۲۴ ساعته: از ‎-۲۰٪ تا ‎+۲۰٪<br>
+تایم‌فریم: یک‌ساعته (1H)<br>
+امتیاز نهایی: حداقل ۷٫۵ از ۱۰<br>
+حداکثر خروجی: ۵ ارز برتر
 </div>
 
-<div class="panel">
-<b>۱. فهرست ارزهای تب MEME در LBank</b>
-<p class="small">
-نمادها را از تب Spot → MEME اپ LBank وارد کن. می‌توانی آن‌ها را با ویرگول یا خط جدید جدا کنی. پسوند USDT لازم نیست.
-</p>
-<textarea id="symbols" placeholder="مثال:&#10;ARCOON&#10;KIMCHI&#10;FTR&#10;DNA&#10;TAPEFOUR&#10;BORDR&#10;CLAUDIA"></textarea>
-<p class="small">نمادهای مثال فقط از تصویر ارسالی خوانده شده‌اند؛ اگر هنوز در تب MEME قابل معامله نیستند، اسکنر آن‌ها را تأیید نمی‌کند.</p>
-<button id="scanBtn" onclick="startScan()">شروع اسکن فیلتر بمب</button>
-<button class="secondary" onclick="stopScan()">توقف اسکن</button>
-<button class="secondary" onclick="clearAll()">پاک کردن</button>
-</div>
+<button id="start" onclick="startScan()">شروع اسکن کامل</button>
+<button class="secondary" onclick="stopScan()">توقف</button>
 
 <div class="panel">
 <b>گزارش اسکن</b>
-<div id="status">آماده. فهرست MEME را وارد کن و اسکن را شروع کن.</div>
+<div id="status">آماده شروع.</div>
 </div>
 
 <div class="panel">
-<b>نتایج با امتیاز حداقل ۷٫۵</b>
+<b>نامزدهای فیلتر بمب</b>
 <div id="results" class="small">هنوز اسکن اجرا نشده است.</div>
 </div>
 
-<div class="panel small">
-<b>توجه به صحت داده‌ها</b><br>
-اسکنر تلاش می‌کند اطلاعات عمومی LBank را مستقیم دریافت کند. اگر مرورگر درخواست را به‌دلیل CORS مسدود کند، پاسخ API محدود شود یا قالب داده متفاوت باشد، خطا در گزارش نمایش داده می‌شود. اسکن ناقص به‌عنوان اسکن کامل بازار معرفی نمی‌شود.
-</div>
-</main>
-
 <script>
-const $ = id => document.getElementById(id);
-let stopped = false;
+const $=id=>document.getElementById(id);
+let stopped=false;
 
-function stopScan(){
-  stopped = true;
-  $("status").textContent += "\nدرخواست توقف ثبت شد.";
-}
-
-function clearAll(){
-  stopped = true;
-  $("symbols").value = "";
-  $("status").textContent = "آماده. فهرست MEME را وارد کن و اسکن را شروع کن.";
-  $("results").textContent = "هنوز اسکن اجرا نشده است.";
-}
+const API="https://api.lbkex.com/v2";
 
 function sleep(ms){
   return new Promise(resolve=>setTimeout(resolve,ms));
+}
+
+function stopScan(){
+  stopped=true;
+  $("status").textContent+="\nدرخواست توقف ثبت شد.";
 }
 
 function fmt(n,d=2){
   return Number(n).toLocaleString("en-US",{maximumFractionDigits:d});
 }
 
-function parseSymbols(){
-  const raw = $("symbols").value.toUpperCase();
-  return [...new Set(
-    raw.split(/[\s,;،]+/)
-       .map(s=>s.trim().replace(/_USDT$/,""))
-       .filter(s=>/^[A-Z0-9]{2,30}$/.test(s))
-  )];
-}
-
 async function getJSON(url){
-  const response = await fetch(url,{cache:"no-store"});
-  if(!response.ok) throw new Error("HTTP "+response.status);
-  return await response.json();
+  const r=await fetch(url,{cache:"no-store"});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j=await r.json();
+  if(j.result===false || j.result==="false"){
+    throw new Error(j.msg||("خطای API: "+j.error_code));
+  }
+  return j;
 }
 
-function unwrapArray(data){
-  if(Array.isArray(data)) return data;
-  if(data && Array.isArray(data.data)) return data.data;
-  if(data && Array.isArray(data.result)) return data.result;
-  if(data && data.data && Array.isArray(data.data.ticker))
-    return data.data.ticker;
+function getRows(j){
+  if(Array.isArray(j.data)) return j.data;
+  if(Array.isArray(j.result)) return j.result;
   return null;
 }
 
-function pairOfTicker(t){
-  return String(t.symbol || t.pair || t.s || "").toLowerCase();
+async function getPairs(){
+  const j=await getJSON(API+"/currencyPairs.do");
+  const rows=getRows(j);
+  if(!rows) throw new Error("فهرست جفت‌ارزها قابل شناسایی نیست.");
+
+  return [...new Set(rows.map(x=>
+    String(typeof x==="string"?x:x.symbol||"").toLowerCase()
+  ))].filter(s=>s.endsWith("_usdt"));
 }
 
-function getChange(t){
-  const keys=[
-    "change","changeRate","percentChange","change_24h",
-    "change24h","changePercent","priceChangePercent"
-  ];
-  for(const k of keys){
-    if(t[k]===undefined || t[k]===null || t[k]==="") continue;
-    const n=Number(t[k]);
-    if(!Number.isFinite(n)) continue;
-
-    // این APIها ممکن است درصد را به شکل 0.05 یا 5 برگردانند.
-    // برای مقادیر کوچک، تشخیص خودکار مبهم است؛ مقدار کسری به درصد تبدیل می‌شود.
-    return Math.abs(n)<=1 ? n*100 : n;
-  }
-  return null;
-}
-
-async function loadTickerMap(){
-  const json=await getJSON(
-    "https://api.lbkex.com/v2/ticker/24hr.do?symbol=all"
-  );
-
-  const rows=unwrapArray(json);
-  if(!rows){
-    throw new Error("قالب فهرست تیکر LBank قابل شناسایی نیست.");
-  }
+async function getTickers(){
+  const j=await getJSON(API+"/ticker/24hr.do?symbol=all");
+  const rows=getRows(j);
+  if(!rows) throw new Error("قالب پاسخ تیکر قابل شناسایی نیست.");
 
   const map=new Map();
-  for(const t of rows){
-    const pair=pairOfTicker(t);
+  for(const row of rows){
+    const pair=String(row.symbol||"").toLowerCase();
     if(!pair.endsWith("_usdt")) continue;
-    map.set(pair,t);
+
+    const t=row.ticker||row;
+    const change=Number(t.change);
+    const price=Number(t.latest??t.price);
+    const volume=Number(t.vol??t.volume);
+    const turnover=Number(t.turnover);
+
+    map.set(pair,{
+      pair,
+      change,
+      price,
+      volume:Number.isFinite(volume)?volume:0,
+      turnover:Number.isFinite(turnover)?turnover:0
+    });
   }
   return map;
 }
 
-async function loadCandles(pair){
-  const url=
-    "https://api.lbkex.com/v2/kline.do?symbol="+
-    encodeURIComponent(pair)+
-    "&type=hour1&size=60&time="+Date.now();
+async function getCandles(pair){
+  const url=API+"/kline.do?symbol="+encodeURIComponent(pair)+
+    "&type=hour1&size=60&time="+Math.floor(Date.now()/1000);
 
-  const json=await getJSON(url);
-  const rows=unwrapArray(json);
+  const j=await getJSON(url);
+  const rows=getRows(j);
+  if(!rows||rows.length<25) throw new Error("کندل کافی نیست");
 
-  if(!rows || rows.length<25){
-    throw new Error("کندل کافی دریافت نشد یا قالب پاسخ ناشناخته است.");
-  }
-
-  const parsed=rows.map(x=>{
-    if(Array.isArray(x)){
-      return {
-        time:Number(x[0]),
-        open:Number(x[1]),
-        high:Number(x[2]),
-        low:Number(x[3]),
-        close:Number(x[4]),
-        volume:Number(x[5])
-      };
-    }
-
+  const out=rows.map(x=>{
+    if(!Array.isArray(x)) return null;
     return {
-      time:Number(x.timestamp ?? x.time ?? x.id),
-      open:Number(x.open),
-      high:Number(x.high),
-      low:Number(x.low),
-      close:Number(x.close),
-      volume:Number(x.volume ?? x.vol ?? x.amount)
+      time:Number(x[0]),
+      open:Number(x[1]),
+      high:Number(x[2]),
+      low:Number(x[3]),
+      close:Number(x[4]),
+      volume:Number(x[5])
     };
-  }).filter(x=>
-    Number.isFinite(x.close) && x.close>0 &&
-    Number.isFinite(x.high) && Number.isFinite(x.low) &&
-    Number.isFinite(x.volume)
-  );
+  }).filter(x=>x&&x.close>0&&
+    Number.isFinite(x.high)&&Number.isFinite(x.low)&&
+    Number.isFinite(x.volume));
 
-  if(parsed.length<25){
-    throw new Error("ساختار کندل‌های دریافت‌شده معتبر نیست.");
-  }
-
-  parsed.sort((a,b)=>a.time-b.time);
-  return parsed;
+  if(out.length<25) throw new Error("داده کندل ناقص است");
+  out.sort((a,b)=>a.time-b.time);
+  return out;
 }
 
-function analyze1H(rows){
-  const close=rows.map(x=>x.close);
-  const last=close[close.length-1];
+function analyze(rows){
+  const closes=rows.map(x=>x.close);
+  const last=closes.at(-1);
   const recent=rows.slice(-6);
   const previous=rows.slice(-24,-6);
 
-  const recentVol=recent.reduce((s,x)=>s+x.volume,0)/recent.length;
-  const previousVol=previous.reduce((s,x)=>s+x.volume,0)/
-                    Math.max(1,previous.length);
-  const volumeRatio=previousVol>0 ? recentVol/previousVol : 0;
+  const rv=recent.reduce((s,x)=>s+x.volume,0)/recent.length;
+  const pv=previous.reduce((s,x)=>s+x.volume,0)/
+    Math.max(1,previous.length);
+  const volumeRatio=pv>0?rv/pv:0;
 
-  const change6=(last/close[close.length-7]-1)*100;
-  const change24=(last/close[close.length-24]-1)*100;
-
-  const window=rows.slice(-24);
-  const high=Math.max(...window.map(x=>x.high));
-  const low=Math.min(...window.map(x=>x.low));
-  const rangePct=(high-low)/last*100;
+  const move6=(last/closes[closes.length-7]-1)*100;
+  const move24=(last/closes[closes.length-24]-1)*100;
+  const last24=rows.slice(-24);
+  const high=Math.max(...last24.map(x=>x.high));
+  const low=Math.min(...last24.map(x=>x.low));
+  const range=(high-low)/last*100;
 
   const lows=rows.slice(-6).map(x=>x.low);
-  let higherLows=0;
+  let higher=0;
   for(let i=1;i<lows.length;i++){
-    if(lows[i]>lows[i-1]) higherLows++;
+    if(lows[i]>lows[i-1]) higher++;
   }
 
   let score=0;
@@ -242,53 +183,52 @@ function analyze1H(rows){
     evidence.push("جهش حجم تأیید نشده");
   }
 
-  if(Math.abs(change6)<=3){
+  if(Math.abs(move6)<=3){
     score+=2;
-    evidence.push("قیمت در ۶ ساعت اخیر فشرده مانده");
-  }else if(Math.abs(change6)<=5){
-    score+=1;
     evidence.push("حرکت ۶ ساعته محدود");
+  }else if(Math.abs(move6)<=5){
+    score+=1;
+    evidence.push("حرکت نسبتاً محدود در ۶ ساعت");
   }
 
-  if(rangePct<=8){
+  if(range<=8){
     score+=2;
-    evidence.push("دامنه ۲۴ کندل اخیر فشرده");
-  }else if(rangePct<=13){
+    evidence.push("دامنه ۲۴ کندل فشرده");
+  }else if(range<=13){
     score+=1;
     evidence.push("فشردگی نسبی دامنه");
   }
 
-  if(higherLows>=4){
+  if(higher>=4){
     score+=2;
-    evidence.push("ساختار کف‌های بالاتر");
-  }else if(higherLows>=2){
+    evidence.push("کف‌های بالاتر");
+  }else if(higher>=2){
     score+=1;
     evidence.push("چند کف بالاتر");
   }
 
-  if(high>0 && (high-last)/last*100<=2.5){
+  if(high>last&&(high-last)/last*100<=2.5){
     score+=1;
-    evidence.push("نزدیکی به سقف کوتاه‌مدت");
+    evidence.push("نزدیک سقف کوتاه‌مدت");
   }
 
-  if(change24>=-3 && change24<=5){
+  if(move24>=-3&&move24<=5){
     score+=1;
-    evidence.push("حرکت ۲۴ ساعته نمودار نسبتاً محدود");
+    evidence.push("حرکت ۲۴ کندل هنوز محدود");
   }
 
   const risks=[];
-  if(volumeRatio<1.4) risks.push("افزایش حجم کافی نیست");
-  if(Math.abs(change6)>5) risks.push("قیمت اخیراً حرکت زیادی داشته");
-  if(rangePct>13) risks.push("دامنه نوسان وسیع است");
-  if(!risks.length) risks.push("شکست فشردگی و نوسان شدید ممکن است");
+  if(volumeRatio<1.4) risks.push("حجم غیرعادی تأیید نشده");
+  if(Math.abs(move6)>5) risks.push("حرکت اخیر قیمت زیاد است");
+  if(range>13) risks.push("دامنه نوسان وسیع");
+  if(!risks.length) risks.push("شکست الگو و نوسان شدید ممکن است");
 
   return {
     score:Math.min(10,score),
-    last,
     volumeRatio,
-    change6,
-    change24,
-    rangePct,
+    move6,
+    move24,
+    range,
     evidence,
     risk:risks.join("؛ ")
   };
@@ -296,135 +236,117 @@ function analyze1H(rows){
 
 async function startScan(){
   stopped=false;
-  $("scanBtn").disabled=true;
-  $("results").textContent="در حال بررسی…";
+  $("start").disabled=true;
+  $("results").textContent="در حال آماده‌سازی…";
 
-  const symbols=parseSymbols();
-  if(!symbols.length){
-    $("status").textContent="ابتدا نمادهای تب MEME را وارد کن.";
-    $("results").textContent="فهرست خالی است.";
-    $("scanBtn").disabled=false;
-    return;
-  }
-
-  let tickerMap;
-  let pairCount=0;
-  let dailyEligible=0;
-  let chartChecked=0;
-  let chartErrors=0;
-  let missingPairs=0;
+  let pairs=[],tickers;
+  let pairCount=0,eligible=0,checked=0,errors=0,missing=0;
+  let errorExamples=[];
   const candidates=[];
-  const errorSamples=[];
 
   try{
-    $("status").textContent="در حال دریافت تیکرهای بازار Spot از LBank…";
-    tickerMap=await loadTickerMap();
-    pairCount=tickerMap.size;
+    $("status").textContent="مرحله ۱: دریافت تمام جفت‌های Spot USDT…";
+    pairs=await getPairs();
+    pairCount=pairs.length;
+
+    $("status").textContent+="\nمرحله ۲: دریافت تیکرهای بازار…";
+    tickers=await getTickers();
+
+    const scanPairs=pairs.filter(p=>tickers.has(p));
+
+    $("status").textContent=
+      "جفت‌های USDT در فهرست بازار: "+pairCount+
+      "\nجفت‌های دارای تیکر: "+scanPairs.length+
+      "\nدر حال بررسی تغییر روزانه و نمودار 1H…";
+
+    const eligiblePairs=[];
+
+    for(const pair of scanPairs){
+      const t=tickers.get(pair);
+      if(!Number.isFinite(t.change)) continue;
+      if(t.change < -20 || t.change > 20) continue;
+      eligible++;
+      eligiblePairs.push({pair,t});
+    }
+
+    for(let i=0;i<eligiblePairs.length;i++){
+      if(stopped) break;
+
+      const {pair,t}=eligiblePairs[i];
+      try{
+        const candles=await getCandles(pair);
+        checked++;
+        const a=analyze(candles);
+
+        if(a.score>=7.5){
+          candidates.push({...t,...a});
+        }
+      }catch(e){
+        errors++;
+        if(errorExamples.length<5) errorExamples.push(pair+": "+e.message);
+      }
+
+      $("status").textContent=
+        "جفت‌های USDT در فهرست بازار: "+pairCount+
+        "\nدارای تیکر: "+scanPairs.length+
+        "\nتغییر ۲۴ ساعته در محدوده: "+eligible+
+        "\nکندل‌های 1H بررسی‌شده: "+checked+
+        "\nخطای نمودار: "+errors+
+        "\nپیشرفت: "+(i+1)+" از "+eligiblePairs.length+
+        (stopped?"\nتوقف درخواست شده.":"\nدر حال اسکن…");
+
+      await sleep(160);
+    }
+
+    candidates.sort((a,b)=>b.score-a.score);
+    const top=candidates.slice(0,5);
+
+    if(!top.length){
+      $("results").textContent=
+        "نامزدی با امتیاز حداقل ۷٫۵ پیدا نشد."+
+        (errors?"\nتوجه: خطای نمودار وجود دارد؛ ممکن است اسکن ناقص باشد.":"");
+    }else{
+      let html="<table><thead><tr>"+
+        "<th>جفت‌ارز</th><th>قیمت</th><th>تغییر ۲۴س</th>"+
+        "<th>حجم ۲۴س</th><th>امتیاز</th><th>شواهد 1H</th><th>ریسک</th>"+
+        "</tr></thead><tbody>";
+
+      for(const x of top){
+        html+="<tr><td><b>"+x.pair.toUpperCase()+"</b></td>"+
+          "<td>"+(Number.isFinite(x.price)?fmt(x.price,8):"نامشخص")+"</td>"+
+          "<td>"+x.change.toFixed(2)+"%</td>"+
+          "<td>"+fmt(x.turnover||x.volume)+"</td>"+
+          "<td><b>"+x.score.toFixed(1)+"/10</b></td>"+
+          "<td>"+x.evidence.join("؛ ")+"</td>"+
+          "<td>"+x.risk+"</td></tr>";
+      }
+
+      html+="</tbody></table>";
+      $("results").innerHTML=html;
+    }
+
+    $("status").textContent=
+      "اسکن "+(stopped?"متوقف شد":"پایان یافت")+
+      "\nجفت‌های Spot USDT در فهرست بازار: "+pairCount+
+      "\nجفت‌های دارای تیکر: "+tickers.size+
+      "\nواجد شرایط تغییر ۲۴ ساعته: "+eligible+
+      "\nکندل 1H بررسی‌شده: "+checked+
+      "\nخطای کندل: "+errors+
+      "\nنامزدهای دارای امتیاز ≥۷٫۵: "+candidates.length+
+      "\nنتایج نمایش‌داده‌شده: "+top.length+
+      (errorExamples.length?"\n\nنمونه خطاها:\n- "+errorExamples.join("\n- "):"")+
+      "\n\nمارکت‌کپ هیچ محدودیتی ندارد.";
+
   }catch(e){
     $("status").textContent=
-      "خطای دریافت تیکر LBank: "+e.message+
-      "\nاتصال API یا دسترسی مرورگر را بررسی کن.";
-    $("results").textContent="اسکن انجام نشد؛ داده معتبر بازار دریافت نشد.";
-    $("scanBtn").disabled=false;
-    return;
+      "خطای اسکن: "+e.message+
+      "\nاطلاعات بازار دریافت نشد؛ نتیجه قابل اتکا نیست.";
+    $("results").textContent="اسکن کامل نشد.";
+  }finally{
+    $("start").disabled=false;
   }
-
-  $("status").textContent=
-    "جفت‌های USDT دریافت‌شده از LBank: "+pairCount+
-    "\nنمادهای MEME واردشده: "+symbols.length+
-    "\nدر حال بررسی تغییر روزانه و کندل 1H…";
-
-  for(const sym of symbols){
-    if(stopped) break;
-
-    const pair=sym.toLowerCase()+"_usdt";
-    const ticker=tickerMap.get(pair);
-
-    if(!ticker){
-      missingPairs++;
-      continue;
-    }
-
-    const change=getChange(ticker);
-    if(change===null){
-      if(errorSamples.length<8)
-        errorSamples.push(sym+": فیلد تغییر ۲۴ ساعته ناشناخته");
-      continue;
-    }
-
-    if(change < -20 || change > 20) continue;
-    dailyEligible++;
-
-    try{
-      const candles=await loadCandles(pair);
-      chartChecked++;
-      const analysis=analyze1H(candles);
-
-      if(analysis.score>=7.5){
-        candidates.push({
-          sym,pair,change,...analysis
-        });
-      }
-    }catch(e){
-      chartErrors++;
-      if(errorSamples.length<8)
-        errorSamples.push(sym+": "+e.message);
-    }
-
-    $("status").textContent=
-      "جفت‌های Spot دریافتی: "+pairCount+
-      "\nنمادهای MEME واردشده: "+symbols.length+
-      "\nواجد شرایط تغییر ۲۴ ساعته: "+dailyEligible+
-      "\nنمودارهای 1H بررسی‌شده: "+chartChecked+
-      "\nخطای نمودار: "+chartErrors+
-      "\nجفت‌ارزهای پیدا نشده: "+missingPairs+
-      (stopped?"\nاسکن متوقف شده است.":"\nدر حال اسکن…");
-
-    await sleep(180);
-  }
-
-  candidates.sort((a,b)=>b.score-a.score);
-  const top=candidates.slice(0,5);
-
-  if(top.length===0){
-    $("results").textContent=
-      "نامزدی با امتیاز حداقل ۷٫۵ پیدا نشد."+
-      (chartErrors ? "\nتوجه: خطای نمودار وجود دارد؛ نتیجه ممکن است ناقص باشد." : "");
-  }else{
-    let html="<table><thead><tr>"+
-      "<th>ارز / جفت</th><th>تغییر ۲۴س</th><th>امتیاز</th>"+
-      "<th>شواهد 1H</th><th>ریسک اصلی</th>"+
-      "</tr></thead><tbody>";
-
-    for(const x of top){
-      html+="<tr>"+
-        "<td><b>"+x.sym+"</b><br>"+x.pair+"</td>"+
-        "<td>"+x.change.toFixed(2)+"%</td>"+
-        "<td><b class='good'>"+x.score.toFixed(1)+"/10</b></td>"+
-        "<td>"+x.evidence.join("؛ ")+"</td>"+
-        "<td>"+x.risk+"</td>"+
-        "</tr>";
-    }
-
-    html+="</tbody></table>";
-    $("results").innerHTML=html;
-  }
-
-  $("status").textContent=
-    "اسکن "+(stopped?"متوقف شد":"پایان یافت")+
-    "\nجفت‌های Spot دریافت‌شده: "+pairCount+
-    "\nنمادهای MEME واردشده: "+symbols.length+
-    "\nواجد شرایط تغییر ۲۴ ساعته: "+dailyEligible+
-    "\nنمودارهای 1H بررسی‌شده: "+chartChecked+
-    "\nخطای نمودار: "+chartErrors+
-    "\nجفت‌های پیدا نشده: "+missingPairs+
-    "\nنامزدهای امتیاز ≥۷٫۵: "+candidates.length+
-    "\nنتایج نمایش‌داده‌شده: "+top.length+
-    (errorSamples.length ? "\n\nنمونه خطاها:\n- "+errorSamples.join("\n- ") : "")+
-    "\n\nمارکت‌کپ در این نسخه هیچ نقشی ندارد.";
-
-  $("scanBtn").disabled=false;
 }
 </script>
+</main>
 </body>
 </html>
