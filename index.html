@@ -4,377 +4,571 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
 <title>اسکنر فیلتر بمب LBank</title>
 <style>
-body{font-family:Arial,sans-serif;background:#10151e;color:#f2f5f9;margin:0;padding:16px}
-main{max-width:850px;margin:auto}
-h2{color:#ffd166}
-button{background:#ffd166;color:#151515;border:0;border-radius:10px;padding:13px 18px;font-size:16px;font-weight:bold}
+*{box-sizing:border-box}
+body{margin:0;background:#0b1220;color:#e8eef7;font-family:Tahoma,Arial,sans-serif;line-height:1.8}
+main{max-width:1100px;margin:auto;padding:14px}
+h1{font-size:22px}
+.panel{background:#121c2d;border:1px solid #26364d;border-radius:14px;padding:14px;margin:12px 0}
+button{border:0;border-radius:9px;padding:12px 18px;background:#2878ed;color:white;font-size:15px;font-weight:bold}
 button:disabled{opacity:.5}
-.panel{background:#1b2431;border-radius:12px;padding:14px;margin:12px 0;overflow-wrap:anywhere}
-.small{color:#b8c3d1;font-size:13px;line-height:1.8}
-#status{white-space:pre-wrap;line-height:1.9}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{padding:9px 5px;border-bottom:1px solid #354052;text-align:right}
-th{color:#ffd166}
-.good{color:#74e0a3}.bad{color:#ff8989}
+.secondary{background:#3a4b63}
+.status{white-space:pre-wrap;color:#b8c7dc;font-size:13px;margin-top:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#0b1423;border:1px solid #26364d;border-radius:10px;padding:10px}
+small,.muted{color:#a8b7cd}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:900px;font-size:13px}
+td,th{padding:10px;border-bottom:1px solid #29374c;text-align:right;vertical-align:top}
+th{background:#0b1423}
+.good{color:#48e09a}.bad{color:#ff7884}.score{color:#48e09a;font-weight:bold}
+.note{font-size:12px;color:#a8b7cd}
+@media(max-width:550px){main{padding:8px}.stats{grid-template-columns:1fr 1fr}h1{font-size:19px}}
 </style>
 </head>
 <body>
 <main>
-<h2>💣 اسکنر فیلتر بمب</h2>
-<div class="panel">
-  <div class="small">
-    بازار: LBank Spot / USDT<br>
-    تایم‌فریم: یک‌ساعته<br>
-    حداقل امتیاز: ۷٫۵ از ۱۰<br>
-    حداکثر نمایش: ۵ ارز<br>
-    شرط مارکت‌کپ و تغییر ۲۴ساعته: ندارد
-  </div>
-  <p><button id="start">شروع اسکن</button></p>
-  <div id="status">برای شروع، دکمه را بزن.</div>
+<h1>💣 اسکنر فیلتر بمب LBank Spot</h1>
+<div class="muted">تایم‌فریم ۱ ساعته | حداکثر ۵ نامزد | حداقل امتیاز ۷٫۵ از ۱۰</div>
+
+<section class="panel">
+<button id="start">شروع اسکن</button>
+<button id="stop" class="secondary" disabled>توقف</button>
+<div id="status" class="status">برای شروع اسکن روی دکمه بزن.</div>
+</section>
+
+<section class="panel stats">
+<div class="stat"><small>نمادهای دریافتی</small><div id="total">—</div></div>
+<div class="stat"><small>واجد شرایط ۲۴ ساعته</small><div id="eligible">—</div></div>
+<div class="stat"><small>کندل‌های معتبر تحلیل‌شده</small><div id="checked">—</div></div>
+</section>
+
+<section class="panel">
+<h3>نتایج اسکن</h3>
+<div class="tablewrap">
+<table>
+<thead>
+<tr>
+<th>ارز</th><th>جفت معاملاتی</th><th>مارکت‌کپ</th>
+<th>تغییر ۲۴ساعته</th><th>تحلیل ۱H</th>
+<th>دلیل انتخاب و ریسک</th><th>امتیاز</th>
+</tr>
+</thead>
+<tbody id="results">
+<tr><td colspan="7">هنوز اسکن انجام نشده است.</td></tr>
+</tbody>
+</table>
 </div>
-<div class="panel">
-  <b>گزارش اتصال</b>
-  <div id="report" class="small">هنوز درخواستی ارسال نشده است.</div>
-</div>
-<div class="panel">
-  <b>نتایج اسکن</b>
-  <div id="results" class="small">هنوز اسکن انجام نشده است.</div>
-</div>
+<p class="note">امتیاز نشان‌دهنده انطباق با معیارهای فنی است و تضمین سود یا پامپ نیست. اگر هیچ ارز با امتیاز حداقل ۷٫۵ پیدا نشود، جدول خالی می‌ماند.</p>
+</section>
 </main>
+
 <script>
 "use strict";
 
-const BASES = [
-  "https://api.lbkex.com/v2",
-  "https://api.lbank.info/v2"
+(() => {
+const API = "https://api.lbkex.com/v2/";
+const PROXIES = [
+ u => u,
+ u => "https://corsproxy.io/?url=" + encodeURIComponent(u),
+ u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u)
 ];
 
 const $ = id => document.getElementById(id);
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+let stopped = false;
+let running = false;
 
-let busy = false;
-let errors = [];
-let checked = 0;
-let candleRequests = 0;
-
-function logError(s) {
-  errors.push(s);
-  if (errors.length > 8) errors.shift();
-}
-
-async function getJSON(path, timeoutMs = 12000) {
-  let lastError = "خطای نامشخص";
-
-  for (const base of BASES) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(base + path, {
-        method: "GET",
-        headers: { "Accept": "application/json" },
-        signal: controller.signal,
-        cache: "no-store"
-      });
-
-      if (!response.ok) {
-        throw new Error("HTTP " + response.status);
-      }
-
-      const json = await response.json();
-
-      if (json && json.result === false) {
-        throw new Error(json.msg || json.error_code || "پاسخ ناموفق API");
-      }
-
-      if (json && json.error_code && Number(json.error_code) !== 0) {
-        throw new Error(json.msg || "API error " + json.error_code);
-      }
-
-      return { json, base };
-    } catch (e) {
-      lastError = e.name === "AbortError"
-        ? "مهلت اتصال تمام شد"
-        : (e.message || "Load failed");
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  throw new Error(lastError);
-}
-
-function extractData(json) {
-  if (Array.isArray(json)) return json;
-  if (json && Array.isArray(json.data)) return json.data;
-  throw new Error("قالب پاسخ API شناخته نشد");
-}
+const sleep = ms => new Promise(resolve => setTimeout(resolve,ms));
 
 function number(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : NaN;
+ if(v===null || v===undefined || v==="") return NaN;
+ const n=Number(v);
+ return Number.isFinite(n)?n:NaN;
 }
 
-function pairName(item) {
-  if (typeof item === "string") return item.toLowerCase();
-  if (item && typeof item.symbol === "string") {
-    return item.symbol.toLowerCase();
+function fmt(n,d=4) {
+ return Number.isFinite(n)
+  ? n.toLocaleString("en-US",{maximumFractionDigits:d})
+  : "نامشخص";
+}
+
+function percent(n) {
+ return Number.isFinite(n)
+  ? (n>0?"+":"")+n.toFixed(2)+"%"
+  : "نامشخص";
+}
+
+function escapeHtml(s) {
+ return String(s??"").replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",
+ '"':"&quot;","'":"&#39;"
+ })[c]);
+}
+
+function setStatus(s) {
+ $("status").textContent=s;
+}
+
+async function fetchJson(url, timeout=10000) {
+ let lastError="خطای شبکه";
+
+ for(const makeUrl of PROXIES) {
+  if(stopped) throw new Error("اسکن متوقف شد.");
+
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeout);
+
+  try {
+   const response=await fetch(makeUrl(url),{
+    method:"GET",
+    cache:"no-store",
+    signal:controller.signal,
+    headers:{"Accept":"application/json"}
+   });
+
+   if(!response.ok) throw new Error("HTTP "+response.status);
+
+   const text=await response.text();
+   const data=JSON.parse(text);
+
+   clearTimeout(timer);
+   return data;
+  } catch(e) {
+   clearTimeout(timer);
+   lastError=e.message||"خطای شبکه";
   }
-  return "";
+ }
+
+ throw new Error("اتصال ناموفق: "+lastError);
 }
 
-async function getPairs() {
-  const { json } = await getJSON("/currencyPairs.do");
-  return extractData(json)
-    .map(pairName)
-    .filter(p => /^[a-z0-9]+_usdt$/.test(p));
+function unwrap(payload) {
+ if(payload && typeof payload==="object") {
+  if(payload.error_code && Number(payload.error_code)!==0)
+   throw new Error(payload.msg||"خطای API");
+
+  if(payload.result===false || payload.result==="false")
+   throw new Error(payload.msg||"API نتیجه ناموفق داد");
+
+  if(payload.data!==undefined) return payload.data;
+ }
+ return payload;
+}
+
+function getSymbol(x) {
+ return String(x.symbol||x.s||x.pair||"")
+  .toLowerCase().replace(/[-/]/g,"_");
+}
+
+function getChange(x) {
+ const fields=[
+  "change","changeRate","change_rate",
+  "percentChange","changePercent","rose"
+ ];
+
+ for(const key of fields) {
+  const n=number(x[key]);
+  if(Number.isFinite(n)) {
+   // نرخ اعشاری را به درصد تبدیل می‌کنیم.
+   return Math.abs(n)<=1?n*100:n;
+  }
+ }
+
+ const last=number(x.latest??x.last??x.close);
+ const open=number(x.open);
+
+ if(Number.isFinite(last)&&Number.isFinite(open)&&open!==0)
+  return (last/open-1)*100;
+
+ return NaN;
+}
+
+function getPrice(x) {
+ for(const key of ["latest","last","close","price"]) {
+  const n=number(x[key]);
+  if(Number.isFinite(n)&&n>0) return n;
+ }
+ return NaN;
+}
+
+function getVolume(x) {
+ for(const key of ["vol","volume","turnover","amount","quoteVolume"]) {
+  const n=number(x[key]);
+  if(Number.isFinite(n)&&n>0) return n;
+ }
+ return NaN;
 }
 
 async function getTickers() {
-  const { json } = await getJSON("/ticker/24hr.do?symbol=all");
-  const rows = extractData(json);
-  const map = new Map();
+ const payload=await fetchJson(API+"ticker/24hr.do?symbol=all");
+ const data=unwrap(payload);
 
-  for (const item of rows) {
-    if (!item || !item.symbol) continue;
-    const t = item.ticker || item;
-    map.set(String(item.symbol).toLowerCase(), {
-      price: number(t.latest ?? t.last),
-      volume24h: number(t.vol),
-      turnover: number(t.turnover)
-    });
+ let arr=Array.isArray(data)?data:[];
+ if(!arr.length && Array.isArray(data?.ticker)) arr=data.ticker;
+ if(!arr.length && Array.isArray(data?.data)) arr=data.data;
+ if(!arr.length && data && typeof data==="object") {
+  if(data.symbol) arr=[data];
+  else arr=Object.values(data).filter(x=>x&&typeof x==="object"&&x.symbol);
+ }
+
+ const map=new Map();
+
+ for(const x of arr) {
+  const symbol=getSymbol(x);
+  if(symbol.endsWith("_usdt")) {
+   map.set(symbol,{
+    symbol,
+    ticker:x,
+    change:getChange(x),
+    price:getPrice(x),
+    volume:getVolume(x)
+   });
   }
+ }
 
-  return map;
+ if(!map.size)
+  throw new Error("فهرست نمادها قابل تشخیص نبود؛ ساختار پاسخ API را بررسی کن.");
+
+ return [...map.values()];
+}
+
+function parseCandle(c) {
+ if(Array.isArray(c)) {
+  return {
+   time:number(c[0]),open:number(c[1]),high:number(c[2]),
+   low:number(c[3]),close:number(c[4]),volume:number(c[5])
+  };
+ }
+
+ return {
+  time:number(c.time??c.timestamp??c.t),
+  open:number(c.open??c.o),high:number(c.high??c.h),
+  low:number(c.low??c.l),close:number(c.close??c.c),
+  volume:number(c.volume??c.vol??c.v)
+ };
 }
 
 async function getCandles(symbol) {
-  const now = Math.floor(Date.now() / 1000);
-  const path = "/kline.do?symbol=" + encodeURIComponent(symbol) +
-    "&type=hour1&size=60&time=" + now;
-  const { json } = await getJSON(path, 10000);
-  const rows = extractData(json);
+ const url=API+"kline.do?symbol="+encodeURIComponent(symbol)+
+  "&type=minute60&size=80";
 
-  const candles = rows.map(r => {
-    if (Array.isArray(r)) {
-      return {
-        time: number(r[0]),
-        open: number(r[1]),
-        high: number(r[2]),
-        low: number(r[3]),
-        close: number(r[4]),
-        volume: number(r[5])
-      };
-    }
-    return {
-      time: number(r.time ?? r.timestamp),
-      open: number(r.open),
-      high: number(r.high),
-      low: number(r.low),
-      close: number(r.close),
-      volume: number(r.volume ?? r.vol)
-    };
-  }).filter(c =>
-    Number.isFinite(c.close) && c.close > 0 &&
-    Number.isFinite(c.high) && Number.isFinite(c.low) &&
-    Number.isFinite(c.volume) && c.volume >= 0
-  );
-
-  candles.sort((a,b) => a.time - b.time);
-  if (candles.length < 24) {
-    throw new Error("کمتر از ۲۴ کندل معتبر");
-  }
-  return candles;
+ const payload=unwrap(await fetchJson(url));
+ if(Array.isArray(payload)) return payload;
+ if(Array.isArray(payload?.data)) return payload.data;
+ if(Array.isArray(payload?.klines)) return payload.klines;
+ return [];
 }
 
-function scoreCandles(c) {
-  const n = c.length;
-  const last = c[n-1].close;
-  let score = 0;
-  const evidence = [];
+function analyse(raw) {
+ const candles=raw.map(parseCandle).filter(c=>
+  [c.open,c.high,c.low,c.close].every(Number.isFinite)&&
+  c.close>0&&c.low>0
+ );
 
-  const recentVol = c.slice(-6).reduce((s,x)=>s+x.volume,0)/6;
-  const priorVol = c.slice(-24,-6).reduce((s,x)=>s+x.volume,0)/18;
-  const volumeRatio = priorVol > 0 ? recentVol/priorVol : 0;
+ if(candles.length<22)
+  return {ok:false,reason:"کندل معتبر کافی دریافت نشد"};
 
-  if (volumeRatio >= 2) {
-    score += 2;
-    evidence.push("حجم ۶ ساعت اخیر " + volumeRatio.toFixed(2) + " برابر میانگین قبلی");
-  } else if (volumeRatio >= 1.4) {
-    score += 1;
-    evidence.push("افزایش نسبی حجم " + volumeRatio.toFixed(2) + " برابر");
+ candles.sort((a,b)=>(a.time||0)-(b.time||0));
+
+ // آخرین کندل ممکن است هنوز بسته نشده باشد.
+ const closed=candles.slice(0,-1);
+ const recent=closed.slice(-20);
+
+ if(recent.length<20)
+  return {ok:false,reason:"کندل بسته‌شده کافی نیست"};
+
+ const last=recent[recent.length-1];
+ const prev=recent[recent.length-2];
+
+ const volumes=recent.slice(0,-1)
+  .map(c=>c.volume)
+  .filter(v=>Number.isFinite(v)&&v>=0);
+
+ const avgVolume=volumes.length
+  ? volumes.reduce((a,b)=>a+b,0)/volumes.length
+  : NaN;
+
+ const volumeRatio=Number.isFinite(last.volume)&&
+  Number.isFinite(avgVolume)&&avgVolume>0
+   ? last.volume/avgVolume:NaN;
+
+ const move3=(last.close/recent[recent.length-4].close-1)*100;
+ const move20=(last.close/recent[0].close-1)*100;
+
+ const ranges=recent.slice(-6)
+  .map(c=>(c.high-c.low)/c.close*100);
+
+ const avgRange=ranges.reduce((a,b)=>a+b,0)/ranges.length;
+ const greenCount=recent.slice(-5).filter(c=>c.close>c.open).length;
+
+ const nearBase=Math.abs(move20)<=8&&avgRange<=7;
+ const priceLag=Number.isFinite(volumeRatio)&&
+  volumeRatio>=1.5&&Math.abs(move3)<=4;
+
+ const lows=recent.slice(-6).map(c=>c.low);
+ const holdingFloor=last.close>=Math.min(...lows)*1.005;
+ const higherClose=last.close>=prev.close;
+ const body=(last.close/last.open-1)*100;
+
+ let score=0;
+ const evidence=[];
+ const warnings=[];
+
+ if(Number.isFinite(volumeRatio)) {
+  if(volumeRatio>=2.5) {
+   score+=2;
+   evidence.push("حجم "+volumeRatio.toFixed(1)+" برابر میانگین");
+  } else if(volumeRatio>=1.5) {
+   score+=1.3;
+   evidence.push("افزایش حجم "+volumeRatio.toFixed(1)+" برابری");
+  } else if(volumeRatio>=1.15) {
+   score+=0.6;
+   evidence.push("افزایش محدود حجم");
   }
+ }
 
-  const price6 = c[n-7].close;
-  const change6 = (last/price6-1)*100;
-  if (Math.abs(change6) <= 3) {
-    score += 2;
-    evidence.push("قیمت در ۶ ساعت تقریباً فشرده است");
-  } else if (Math.abs(change6) <= 5) {
-    score += 1;
-    evidence.push("تغییر قیمت ۶ ساعته " + change6.toFixed(2) + "%");
-  }
+ if(nearBase) {
+  score+=1.6;
+  evidence.push("قیمت نزدیک بیس و فشردگی نسبی");
+ }
 
-  const recent = c.slice(-24);
-  const hi = Math.max(...recent.map(x=>x.high));
-  const lo = Math.min(...recent.map(x=>x.low));
-  const range = lo > 0 ? (hi-lo)/lo*100 : 999;
+ if(priceLag) {
+  score+=1.5;
+  evidence.push("عقب‌ماندگی قیمت نسبت به حجم");
+ }
 
-  if (range <= 8) {
-    score += 2;
-    evidence.push("دامنه نوسان ۲۴ کندل " + range.toFixed(2) + "%؛ فشردگی بالا");
-  } else if (range <= 13) {
-    score += 1;
-    evidence.push("دامنه نوسان ۲۴ کندل " + range.toFixed(2) + "%");
-  }
+ if(holdingFloor) {
+  score+=1.2;
+  evidence.push("حفظ کف کوتاه‌مدت");
+ }
 
-  let higherLows = 0;
-  for (let i=n-6; i<n-1; i++) {
-    if (c[i].low > c[i-1].low) higherLows++;
-  }
-  if (higherLows >= 4) {
-    score += 2;
-    evidence.push("کف‌های بالاتر در " + higherLows + " مقایسه");
-  } else if (higherLows >= 2) {
-    score += 1;
-    evidence.push("چند کف بالاتر تشکیل شده");
-  }
+ if(greenCount>=3) {
+  score+=1;
+  evidence.push("حداقل ۳ کندل سبز از ۵ کندل");
+ }
 
-  const distanceHigh = hi > 0 ? (hi-last)/hi*100 : 999;
-  if (distanceHigh <= 2.5) {
-    score += 1;
-    evidence.push("قیمت نزدیک سقف کوتاه‌مدت است");
-  }
+ if(higherClose) {
+  score+=0.5;
+  evidence.push("بسته‌شدن بالاتر از کندل قبلی");
+ }
 
-  const change24 = (last/c[0 + n-24].close-1)*100;
-  if (change24 >= -3 && change24 <= 5) {
-    score += 1;
-    evidence.push("حرکت ۲۴ کندلی بین ۳%- و ۵%+ است");
-  }
+ if(body>=0&&body<=3) {
+  score+=0.5;
+  evidence.push("بدنه کندل بدون جهش شدید");
+ }
 
-  return {
-    score: Math.min(10, score),
-    price: last,
-    volumeRatio,
-    change6,
-    range,
-    evidence,
-    risk: volumeRatio < 1.4
-      ? "جهش حجم تأیید نشده"
-      : "امتیاز فقط الگوی قیمتی است؛ تضمین رشد نیست"
-  };
+ if(avgRange<=4) {
+  score+=0.7;
+  evidence.push("دامنه نوسان فشرده");
+ }
+
+ if(move3>8) {
+  score-=1.2;
+  warnings.push("حرکت کوتاه‌مدت قابل‌توجه");
+ }
+
+ if(move3< -8) {
+  score-=0.8;
+  warnings.push("فشار نزولی کوتاه‌مدت");
+ }
+
+ score=Math.max(0,Math.min(10,score));
+
+ return {
+  ok:true,score,volumeRatio,move3,move20,
+  nearBase,priceLag,holdingFloor,greenCount,
+  evidence,warnings
+ };
 }
 
-async function runPool(items, limit, worker) {
-  let index = 0;
-  const workers = Array.from(
-    {length: Math.min(limit, items.length)},
-    async () => {
-      while (index < items.length) {
-        const i = index++;
-        await worker(items[i]);
-      }
-    }
-  );
-  await Promise.all(workers);
+async function getMarketCaps(coins) {
+ const caps=new Map();
+
+ try {
+  const url="https://api.coingecko.com/api/v3/coins/markets"+
+   "?vs_currency=usd&order=market_cap_desc&per_page=250&page=1";
+
+  const data=await fetchJson(url,7000);
+  if(!Array.isArray(data)) return caps;
+
+  const bySymbol=new Map();
+
+  for(const coin of data) {
+   const s=String(coin.symbol||"").toLowerCase();
+   if(!s) continue;
+
+   if(!bySymbol.has(s)) bySymbol.set(s,[]);
+   bySymbol.get(s).push(number(coin.market_cap));
+  }
+
+  for(const item of coins) {
+   const base=item.symbol.split("_")[0];
+   const matches=bySymbol.get(base);
+
+   // از تطبیق مبهم نمادهای هم‌نام جلوگیری می‌کنیم.
+   if(matches&&matches.length===1&&Number.isFinite(matches[0]))
+    caps.set(item.symbol,matches[0]);
+  }
+ } catch(e) {
+  // نبود داده مارکت‌کپ به‌صورت نامشخص گزارش می‌شود.
+ }
+
+ return caps;
+}
+
+function render(candidates) {
+ const tbody=$("results");
+
+ if(!candidates.length) {
+  tbody.innerHTML=
+   '<tr><td colspan="7">نامزد قابل‌قبولی با امتیاز حداقل ۷٫۵ و داده فنی کافی پیدا نشد. این نتیجه فقط مربوط به نمادهایی است که اسکنر موفق به بررسی آن‌ها شد.</td></tr>';
+  return;
+ }
+
+ tbody.innerHTML=candidates.map(c=>{
+  const a=c.analysis;
+  const cap=Number.isFinite(c.marketCap)
+   ? "$"+fmt(c.marketCap,0):"نامشخص";
+
+  const evidence=a.evidence.join("؛ ")||"شواهد محدود";
+  const risks=a.warnings.join("؛ ")||"ریسک شکست کف و افت حجم";
+
+  return "<tr>"+
+   "<td><b>"+escapeHtml(c.symbol.split("_")[0].toUpperCase())+"</b></td>"+
+   "<td>"+escapeHtml(c.symbol.toUpperCase().replace("_","/"))+"</td>"+
+   "<td>"+escapeHtml(cap)+"</td>"+
+   '<td class="'+(c.change>=0?"good":"bad")+'">'+escapeHtml(percent(c.change))+"</td>"+
+   "<td>"+escapeHtml(
+    "بیس: "+(a.nearBase?"تأیید نسبی":"تأیید نشد")+
+    "؛ حجم: "+(Number.isFinite(a.volumeRatio)?a.volumeRatio.toFixed(2)+" برابر":"نامشخص")+
+    "؛ تغییر ۲۰ کندل: "+percent(a.move20)
+   )+"<br><span class='note'>"+escapeHtml(evidence)+"</span></td>"+
+   "<td>"+escapeHtml("دلایل: "+evidence+" | ریسک: "+risks)+"</td>"+
+   '<td class="score">'+a.score.toFixed(1)+"/10</td>"+
+   "</tr>";
+ }).join("");
 }
 
 async function scan() {
-  if (busy) return;
-  busy = true;
-  $("start").disabled = true;
-  $("results").textContent = "در حال دریافت اطلاعات...";
-  $("report").textContent = "";
-  $("status").textContent = "مرحله ۱ از ۳: دریافت جفت‌ارزها و قیمت‌ها...";
-  errors = [];
-  checked = 0;
-  candleRequests = 0;
+ if(running) return;
 
-  try {
-    const pairs = await getPairs();
-    $("status").textContent =
-      "مرحله ۲ از ۳: دریافت تیکر بازار؛ جفت‌ارزهای USDT در فهرست: " +
-      pairs.length;
+ running=true;
+ stopped=false;
+ $("start").disabled=true;
+ $("stop").disabled=false;
+ $("total").textContent="—";
+ $("eligible").textContent="—";
+ $("checked").textContent="0";
+ $("results").innerHTML='<tr><td colspan="7">در حال دریافت اطلاعات...</td></tr>';
 
-    const tickers = await getTickers();
-    const candidates = pairs.filter(p => tickers.has(p));
-    if (!candidates.length) {
-      throw new Error("تیکرها با فهرست جفت‌ارزها تطبیق نداشتند");
-    }
+ let checked=0;
+ let eligibleCount=0;
 
-    const scored = [];
-    $("status").textContent =
-      "مرحله ۳ از ۳: بررسی کندل‌های یک‌ساعته. ممکن است چند دقیقه طول بکشد.";
+ try {
+  setStatus("مرحله ۱: دریافت نمادهای بازار LBank...");
+  const all=await getTickers();
 
-    await runPool(candidates, 4, async symbol => {
-      candleRequests++;
-      try {
-        const candles = await getCandles(symbol);
-        checked++;
-        const result = scoreCandles(candles);
-        if (result.score >= 7.5) {
-          scored.push({
-            symbol,
-            ...result,
-            ticker: tickers.get(symbol)
-          });
-        }
-      } catch (e) {
-        logError(symbol + ": " + (e.message || "خطای دریافت کندل"));
-      }
-      $("status").textContent =
-        "در حال بررسی کندل‌ها: " + candleRequests +
-        " از " + candidates.length +
-        " جفت‌ارز | کندل معتبر: " + checked;
-      await sleep(80);
-    });
+  $("total").textContent=all.length;
 
-    scored.sort((a,b)=>b.score-a.score);
-    const top = scored.slice(0,5);
+  // هر دو مرز -۲۰ و +۲۰ درصد شامل می‌شوند.
+  const eligible=all.filter(x=>
+   Number.isFinite(x.change)&&x.change>=-20&&x.change<=20
+  );
 
-    if (!top.length) {
-      $("results").innerHTML =
-        "نامزدی با امتیاز ۷٫۵ یا بالاتر پیدا نشد. " +
-        "این به معنی نبود فرصت نیست؛ فقط با این معیارها نامزدی تأیید نشد.";
-    } else {
-      $("results").innerHTML =
-        '<table><thead><tr><th>جفت‌ارز</th><th>قیمت</th><th>امتیاز</th><th>شواهد</th><th>ریسک</th></tr></thead><tbody>' +
-        top.map(x => '<tr>' +
-          '<td>' + x.symbol.toUpperCase() + '</td>' +
-          '<td>' + x.price + '</td>' +
-          '<td class="good">' + x.score.toFixed(1) + '/10</td>' +
-          '<td>' + x.evidence.join("؛ ") + '</td>' +
-          '<td>' + x.risk + '</td></tr>').join("") +
-        '</tbody></table>';
-    }
+  eligibleCount=eligible.length;
+  $("eligible").textContent=eligibleCount;
 
-    $("status").textContent = "اسکن پایان یافت.";
-    $("report").textContent =
-      "جفت‌ارزهای Spot/USDT در فهرست: " + pairs.length +
-      "\nجفت‌ارزهای دارای تیکر: " + candidates.length +
-      "\nدرخواست کندل ارسال‌شده: " + candleRequests +
-      "\nجفت‌ارزهای دارای کندل معتبر: " + checked +
-      "\nخطاهای ثبت‌شده: " + errors.length +
-      (errors.length ? "\nنمونه خطاها:\n" + errors.slice(0,8).join("\n") : "");
-
-  } catch (e) {
-    $("status").innerHTML =
-      '<span class="bad">خطای اسکن: ' +
-      (e.message || "Load failed") +
-      '</span>\nاطلاعات بازار دریافت نشد؛ نتیجه قابل اتکا نیست.';
-    $("report").textContent =
-      "درخواست‌های کندل موفق: " + checked +
-      "\nخطاها:\n" + errors.slice(0,8).join("\n");
-    $("results").textContent = "نتیجه‌ای برای نمایش تأیید نشد.";
-  } finally {
-    busy = false;
-    $("start").disabled = false;
+  if(!eligible.length) {
+   render([]);
+   setStatus("هیچ نمادی با تغییر ۲۴ساعته تأییدشده در بازه مجاز پیدا نشد.");
+   return;
   }
+
+  setStatus("مرحله ۲: بررسی مارکت‌کپ و کندل‌های ۱ساعته...");
+  const caps=await getMarketCaps(eligible);
+
+  // حداکثر ۵۰۰ نماد اول بر اساس معیار مرتب‌سازی حجم.
+  const pool=eligible
+   .filter(x=>Number.isFinite(x.price)&&x.price>0)
+   .sort((a,b)=>
+    (Number.isFinite(b.volume)?b.volume:0)-
+    (Number.isFinite(a.volume)?a.volume:0)
+   ).slice(0,500);
+
+  const accepted=[];
+
+  for(let i=0;i<pool.length;i++) {
+   if(stopped) break;
+
+   const coin=pool[i];
+   const cap=caps.get(coin.symbol);
+
+   // اگر مارکت‌کپ معلوم و برابر یا بیشتر از ۱۰۰ میلیون باشد، حذف می‌شود.
+   if(Number.isFinite(cap)&&cap>=100000000) continue;
+
+   try {
+    const candles=await getCandles(coin.symbol);
+    const analysis=analyse(candles);
+
+    if(analysis.ok) {
+     checked++;
+     if(analysis.score>=7.5) {
+      accepted.push({...coin,marketCap:cap,analysis});
+     }
+    }
+   } catch(e) {
+    // خطای یک نماد نباید کل اسکن را متوقف کند.
+   }
+
+   $("checked").textContent=checked;
+
+   if(i%5===0||i===pool.length-1) {
+    setStatus(
+     "در حال اسکن: "+(i+1)+" از "+pool.length+
+     "\nکندل‌های معتبر: "+checked+
+     "\nواجد شرایط ۲۴ساعته: "+eligibleCount
+    );
+   }
+
+   await sleep(150);
+  }
+
+  accepted.sort((a,b)=>b.analysis.score-a.analysis.score);
+  render(accepted.slice(0,5));
+
+  setStatus(
+   (stopped?"اسکن متوقف شد.":"اسکن پایان یافت.")+
+   "\nنمادهای دریافتی: "+all.length+
+   "\nتغییر ۲۴ساعته مجاز: "+eligibleCount+
+   "\nکندل‌های معتبر تحلیل‌شده: "+checked+
+   "\nنامزدهای دارای امتیاز حداقل ۷٫۵: "+accepted.length+
+   "\nمارکت‌کپ تأییدنشده، نامشخص نمایش داده می‌شود."
+  );
+
+ } catch(e) {
+  $("results").innerHTML=
+   '<tr><td colspan="7">داده کافی برای تأیید نامزدها دریافت نشد.</td></tr>';
+
+  setStatus(
+   "خطا: "+(e.message||String(e))+
+   "\nخطای 403، 429 یا Load failed معمولاً به معنی رد دسترسی API یا پراکسی است. این اجرا اسکن کامل بازار محسوب نمی‌شود."
+  );
+
+ } finally {
+  running=false;
+  $("start").disabled=false;
+  $("stop").disabled=true;
+ }
 }
 
-$("start").addEventListener("click", scan);
+$("start").addEventListener("click",scan);
+$("stop").addEventListener("click",()=>{
+ stopped=true;
+ setStatus("درخواست توقف ثبت شد...");
+});
+})();
 </script>
 </body>
 </html>
